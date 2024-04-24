@@ -1,86 +1,113 @@
 import fs from 'fs';
 
-const PRODUCTOS = './productos.txt';
+const STORAGE = 'src/products.json';
 
-class ProductManager {
+export default class ProductManager {
     constructor() {
         this.products = [];
+        this.nextId = 1;
+        this.initialize();
+    }
+
+    async initialize() {
+        try {
+            const data = await fs.promises.readFile(STORAGE, 'utf-8');
+            const products = JSON.parse(data);
+            if (products.length > 0) {
+                const lastProduct = products[products.length - 1];
+                this.nextId = lastProduct.id + 1;
+            }
+            this.products = products;
+        } catch (error) {
+            console.error("Error al inicializar el ID:", error);
+        }
     }
 
     async addProduct(product) {
-        const existingProduct = this.products.find(p => p.codigo === product.codigo);
-        if (existingProduct) {
-            console.log("Error: ya existe el código del producto");
-            return;
-        }
-        this.products.push(product);
-        
-        const data = JSON.stringify(this.products, null, 2);
-       
-        try {
-            await fs.promises.writeFile(PRODUCTOS, data);
-            console.log("Producto agregado correctamente");
-        } catch (error) {
-            console.error("Los datos no se guardaron", error);
+        const isValid =
+            product.title &&
+            product.description &&
+            product.price &&
+            product.thumbnail &&
+            product.code &&
+            product.stock;
+        const isDuplicate = this.products.some((p) => p.code === product.code);
+    
+        if (isValid && !isDuplicate) {
+            product.id = this.nextId++;
+            this.products.push(product);
+    
+            try {
+                await fs.promises.writeFile(STORAGE, JSON.stringify(this.products, null, 2));
+                console.log("Producto agregado correctamente");
+            } catch (error) {
+                console.error("Los datos no se guardaron", error);
+            }
+        } else {
+            console.log("Todos los campos son obligatorios o el código de producto ya existe");
         }
     }
-
+    
     async getProducts() {
         try {
-            const data = await fs.promises.readFile(PRODUCTOS, 'utf-8');
+            const data = await fs.promises.readFile(STORAGE, 'utf-8');
             this.products = JSON.parse(data);
-            console.log(this.products);
             return this.products;
         } catch (error) {
-            console.error("Error al leer el archivo", error);
+            console.error("Error al leer el archivo:", error);
             return [];
         }
     }
 
-    async getProductById(productId) {
-        try {
-            const data = await fs.promises.readFile(PRODUCTOS, 'utf-8');
-            this.products = JSON.parse(data);
-            const product = this.products.find(p => p.codigo === productId);
-            if (product) {
-                return product;
-            } else {
-                console.log("Producto no encontrado");
-            }
-        } catch (error) {
-            console.error("Error al leer el archivo", error);
-            return null;
+    getProductById(id) {
+        const product = this.products.find((p) => p.id === id);
+        if (product) {
+            console.log("Producto encontrado:");
+            console.log(product);
+            return product;
+        } else {
+            throw new Error("Producto no encontrado");
         }
-    }
+    }    
 
-    async updateProduct(productId, updatedFields) {
-        try {
-            const data = await fs.promises.readFile(PRODUCTOS, 'utf-8');
-            this.products = JSON.parse(data);
-            const index = this.products.findIndex(p => p.codigo === productId);
-            if (index !== -1) {
-                this.products[index] = { ...this.products[index], ...updatedFields };
-                await fs.promises.writeFile(PRODUCTOS, JSON.stringify(this.products, null, 2));
+    async updateProduct(id, updatedFields) {
+        const productIndex = this.products.findIndex((p) => p.id === id);
+        if (productIndex !== -1) {
+            const updatedProduct = { ...this.products[productIndex], ...updatedFields };
+            this.products[productIndex] = updatedProduct;
+
+            try {
+                await fs.promises.writeFile(STORAGE, JSON.stringify(this.products, null, 2));
                 console.log("Producto actualizado correctamente");
-            } else {
-                console.log("Producto no encontrado");
+            } catch (error) {
+                console.error("Error al actualizar el producto:", error);
             }
-        } catch (error) {
-            console.error("Error al leer o escribir el archivo", error);
+        } else {
+            throw new Error("Producto no encontrado");
         }
     }
 
-    async deleteProduct(productId) {
+    async deleteProduct(id) {
+        const updatedProducts = this.products.filter((product) => product.id !== id);
+
+        if (updatedProducts.length < this.products.length) {
+            try {
+                await fs.promises.writeFile(STORAGE, JSON.stringify(updatedProducts, null, 2));
+                console.log("Producto eliminado correctamente");
+            } catch (error) {
+                console.error("Error al eliminar el producto:", error);
+            }
+        } else {
+            throw new Error("Producto no encontrado");
+        }
+    }
+
+    async deleteFile() {
         try {
-            const data = await fs.promises.readFile(PRODUCTOS, 'utf-8');
-            this.products = JSON.parse(data);
-            const filteredProducts = this.products.filter(p => p.codigo !== productId);
-            await fs.promises.writeFile(PRODUCTOS, JSON.stringify(filteredProducts, null, 2));
-            console.log("Producto eliminado correctamente");
+            await fs.promises.unlink(STORAGE);
+            console.log("Archivo eliminado correctamente");
         } catch (error) {
-            console.error("Error al leer o escribir el archivo", error);
+            console.error("Error al eliminar el archivo:", error);
         }
     }
 }
-
-export default ProductManager;

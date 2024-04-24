@@ -9,9 +9,9 @@ class CartManager {
         this.loadCartsFromFile();
     }
 
-    async saveCarts() {
+    async saveCarts(newCarts) {
         try {
-            const cartData = JSON.stringify(this.carts, null, 2);
+            const cartData = JSON.stringify(newCarts, null, 2);
             await fs.promises.writeFile(CARTS_FILE, cartData, 'utf-8');
             console.log("Carritos guardados con éxito");
         } catch (error) {

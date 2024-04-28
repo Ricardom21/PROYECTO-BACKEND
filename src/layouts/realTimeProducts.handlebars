@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real Time Products</title>
+</head>
+<body>
+    <h1>Listado de Productos en Tiempo Real</h1>
+    <ul id="productList">
+        {{#each products}}
+            <li>{{this}}</li>
+        {{/each}}
+    </ul>
+
+    <h2>Agregar Producto</h2>
+    <form id="productForm">
+        <input type="text" id="productName" placeholder="Nombre del Producto" required>
+        <button type="submit">Agregar Producto</button>
+    </form>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.3.2/socket.io.js"></script>
+    <script>
+        const socket = io();
+
+        // Manejar la recepción de nuevos productos
+        socket.on('nuevoProducto', (producto) => {
+            const productList = document.getElementById('productList');
+            const newItem = document.createElement('li');
+            newItem.textContent = producto;
+            productList.appendChild(newItem);
+        });
+
+        // Manejar el envío del formulario para agregar un producto
+        const productForm = document.getElementById('productForm');
+        productForm.addEventListener('submit', (event) => {
+            event.preventDefault();
+            const productNameInput = document.getElementById('productName');
+            const productName = productNameInput.value.trim();
+
+            // Enviar el nuevo producto al servidor a través de WebSocket
+            socket.emit('nuevoProducto', productName);
+
+            // Limpiar el campo del formulario
+            productNameInput.value = '';
+        });
+    </script>
+</body>
+</html>

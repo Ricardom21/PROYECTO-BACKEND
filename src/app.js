@@ -1,66 +1,30 @@
 import express from 'express';
-import exphbs from 'express-handlebars';
-import http from 'http';
-import { Server } from 'socket.io';
-import { fileURLToPath } from 'url';
-import path from 'path';
-
-// Obtener la ruta del directorio actual
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-const PORT = process.env.PORT || 3000;
-const app = express();
-const server = http.createServer(app);
-const io = new Server(server);
-
-// Configurar el motor de plantillas Handlebars
-const hbs = exphbs.create();
-app.engine('handlebars', hbs.engine);
-app.set('view engine', 'handlebars');
-
-// Middleware para manejar solicitudes JSON
-app.use(express.json());
-
-// Rutas de productos y carritos
 import productRoutes from './routes/productRoutes.js'; 
 import cartRoutes from './routes/cartRoutes.js'; 
+import config from './config.js';
+import handlebars from 'express-handlebars'
+import { viewRouter } from './routes/viewsRoutes.js';
+
+
+const app = express();
+
+//MIDLEWERE
+app.use(express.json());
+app.use(express.urlencoded({extended: true}))
+
+//RUTAS
 app.use('/api/products', productRoutes);
-app.use('/api/carts', cartRoutes);
+app.use('/api/cart', cartRoutes);
+app.use('/', viewRouter) 
 
-// Ruta para los archivos estáticos
-app.use(express.static(path.resolve(__dirname, 'public')));
+//rutas estaticas para archivos estaticos
+app.use('/static', express.static(`${config.DIRNAME}/public`) )
 
-// Manejo de conexiones de clientes con Socket.io
-io.on('connection', (socket) => {
-  console.log('Cliente conectado');
+//handlebars
+app.engine('handlebars', handlebars.engine())
+app.set('views',`${config.DIRNAME}/views`)
+app.set('view engine','handlebars')
 
-
-
-  socket.on('disconnect', () => {
-    console.log('Cliente desconectado');
-  });
+app.listen( config.PORT, () => {
+  console.log(`Servidor activo en puerto http://localhost:${config.PORT}`);
 });
-
-// Ruta para la vista home
-app.get('/', async (req, res) => {
-  
-  const products = []; 
-  res.render('home', { products });
-});
-
-// Ruta para la vista realTimeProducts
-app.get('/realtimeproducts', async (req, res) => {
-
-  const products = []; 
-  res.render('realTimeProducts', { products });
-});
-
-// Iniciar el servidor solo si estamos en un entorno Node.js
-if (typeof process !== 'undefined') {
-  server.listen(PORT, () => {
-    console.log(`Servidor activo en puerto ${PORT}`);
-  });
-}
-
-export default app;

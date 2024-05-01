@@ -1,6 +1,44 @@
-<section>
-    {{#each products}}
-<span> Nombre {{title}}</span>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lista de Productos</title>
+</head>
+<body>
+    <h1>Lista de Productos</h1>
+    <ul id="product-list">
+        {{#each products}}
+            <li>{{this.title}} - ${{this.price}}</li>
+        {{/each}}
+    </ul>
 
-    {{/each}}
-</section>
+    <!-- Agrega el código JavaScript para conectar al servidor WebSocket -->
+    <script>
+        // Crea una conexión WebSocket con el servidor
+        const socket = new WebSocket('ws://localhost:3000');
+
+        // Maneja mensajes recibidos del servidor
+        socket.onmessage = (event) => {
+            // Parsea el mensaje JSON recibido desde el servidor
+            const message = JSON.parse(event.data);
+            
+            // Si el mensaje es una actualización de productos, actualiza la lista de productos en la vista
+            if (message.type === 'productUpdate') {
+                const productList = document.getElementById('product-list');
+                
+                // Limpia la lista de productos existente
+                productList.innerHTML = '';
+
+                // Agrega cada producto al HTML
+                message.products.forEach(product => {
+                    const listItem = document.createElement('li');
+                    listItem.textContent = `${product.title} - $${product.price}`;
+                    productList.appendChild(listItem);
+                });
+            }
+        };
+    </script>
+</body>
+</html>
+

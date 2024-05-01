@@ -1,34 +1,18 @@
 import express from 'express';
 import ProductManager from '../productManager.js';
+import { Server } from 'socket.io';
 
 const manager = new ProductManager();
-const productRoutes = express.Router()
-
+const productRoutes = express.Router();
 
 // Ruta para listar todos los productos
 productRoutes.get('/', async (req, res) => {
     try {
         const products = await manager.getProducts();
-        res.send({ estado: 1, productos: products });
+        res.render('home', { products });
     } catch (error) {
         console.error("Error al obtener los productos:", error);
         res.status(500).send({ estado: 0, mensaje: "Error al obtener los productos" });
-    }
-});
-
-// Ruta para obtener un producto por ID
-productRoutes.get('/:pid', async (req, res) => {
-    const productId = Number( req.params.pid)
-    try {
-        const product = await manager.getProductById(productId);
-        if (product) {
-            res.send({ estado: 1, producto: product });
-        } else {
-            res.status(404).send({ estado: 0, mensaje: "Producto no encontrado" });
-        }
-    } catch (error) {
-        console.error("Error al obtener el producto:", error);
-        res.status(500).send({ estado: 0, mensaje: "Error al obtener el producto" });
     }
 });
 
@@ -36,7 +20,13 @@ productRoutes.get('/:pid', async (req, res) => {
 productRoutes.post('/', async (req, res) => {
     const newProduct = req.body;
     try {
+        // Agrega el producto utilizando el manager de productos
         await manager.addProduct(newProduct);
+
+        // Emitir un evento WebSocket para notificar a los clientes sobre el nuevo producto
+        const io = req.app.get('socketServer');
+        io.emit('newProduct', newProduct);
+
         res.status(201).send({ estado: 1, mensaje: "Producto agregado correctamente" });
     } catch (error) {
         console.error("Error al agregar el producto:", error);
@@ -44,24 +34,17 @@ productRoutes.post('/', async (req, res) => {
     }
 });
 
-// Ruta para actualizar un producto
-productRoutes.put('/:pid', async (req, res) => {
-    const productId = Number( req.params.pid)
-    const updatedFields = req.body;
-    try {
-        await manager.updateProduct(productId, updatedFields);
-        res.send({ estado: 1, mensaje: "Producto actualizado correctamente" });
-    } catch (error) {
-        console.error("Error al actualizar el producto:", error);
-        res.status(500).send({ estado: 0, mensaje: "Error al actualizar el producto" });
-    }
-});
-
 // Ruta para eliminar un producto
 productRoutes.delete('/:pid', async (req, res) => {
-    const productId = Number( req.params.pid)
+    const productId = Number(req.params.pid);
     try {
+        // Elimina el producto utilizando el manager de productos
         await manager.deleteProduct(productId);
+
+        // Emitir un evento WebSocket para notificar a los clientes sobre el producto eliminado
+        const io = req.app.get('socketServer');
+        io.emit('productDeleted', productId);
+
         res.send({ estado: 1, mensaje: "Producto eliminado correctamente" });
     } catch (error) {
         console.error("Error al eliminar el producto:", error);
@@ -69,6 +52,5 @@ productRoutes.delete('/:pid', async (req, res) => {
     }
 });
 
+export default productRoutes;
 
-
-export default productRoutes

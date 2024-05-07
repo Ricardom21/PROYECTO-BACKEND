@@ -16,6 +16,7 @@ productRoutes.get('/', async (req, res) => {
     }
 });
 
+
 // Ruta para agregar un nuevo producto
 productRoutes.post('/', async (req, res) => {
     const newProduct = req.body;
@@ -23,9 +24,8 @@ productRoutes.post('/', async (req, res) => {
         // Agrega el producto utilizando el manager de productos
         await manager.addProduct(newProduct);
 
-        // Emitir un evento WebSocket para notificar a los clientes sobre el nuevo producto
-        const io = req.app.get('socketServer');
-        io.emit('newProduct', newProduct);
+        const socketServer = req.app.get('socketServer');
+        socketServer.emit('productUpdate', newProduct);
 
         res.status(201).send({ estado: 1, mensaje: "Producto agregado correctamente" });
     } catch (error) {

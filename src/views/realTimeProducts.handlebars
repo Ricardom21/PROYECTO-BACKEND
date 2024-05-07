@@ -5,32 +5,33 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Productos</title>
 </head>
-<body>
-    <h1> Lista de Productos</h1>
+<body> 
+    <section>
+<h1> Lista de Productos</h1>
     <ul id="product-list">
         {{#each products}}
             <li>{{this.title}} - ${{this.price}}</li>
         {{/each}}
     </ul>
-
-    <script>
-        // Establece una conexión WebSocket con el servidor
-        const socket = new WebSocket('ws://localhost:8080');
+    </section>
+<section>
+{{>form}}
+</section>
+     <script>
+        // Establece una conexión Socket.IO con el servidor
+        const socket = io();
 
         // Maneja los mensajes recibidos del servidor
-        socket.onmessage = function(event) {
-            const message = JSON.parse(event.data);
-            if (message.type === 'productUpdate') {
-                // Actualiza la lista de productos en la vista
-                const productList = document.getElementById('product-list');
-                productList.innerHTML = '';
-                message.products.forEach(product => {
-                    const listItem = document.createElement('li');
-                    listItem.textContent = `${product.title} - $${product.price}`;
-                    productList.appendChild(listItem);
-                });
-            }
-        };
+        socket.on('productUpdate', function(products) {
+            // Actualiza la lista de productos en la vista
+            const productList = document.getElementById('product-list');
+            productList.innerHTML = '';
+            products.forEach(product => {
+                const listItem = document.createElement('li');
+                listItem.textContent = `${product.title} - $${product.price}`;
+                productList.appendChild(listItem);
+            });
+        });
     </script>
 </body>
 </html>

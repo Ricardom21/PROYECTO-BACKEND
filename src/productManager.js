@@ -8,7 +8,9 @@ export default class ProductManager {
         this.nextId = 1;
         this.initialize();
     }
-
+    setSocket(socket) {
+        this.socket = socket;
+    }
     async initialize() {
         try {
             const data = await fs.promises.readFile(STORAGE, 'utf-8');
@@ -28,7 +30,7 @@ export default class ProductManager {
             product.title &&
             product.description &&
             product.price &&
-            product.thumbnail &&
+            product.thumbnails &&
             product.code &&
             product.stock;
         const isDuplicate = this.products.some((p) => p.code === product.code);
@@ -39,6 +41,11 @@ export default class ProductManager {
     
             try {
                 await fs.promises.writeFile(STORAGE, JSON.stringify(this.products, null, 2));
+                // Después de agregar el producto con éxito
+                if (this.socket) {
+                    this.socket.emit('productUpdate', { type: 'productUpdate', products: this.products });
+                }
+
                 console.log("Producto agregado correctamente");
             } catch (error) {
                 console.error("Los datos no se guardaron", error);
@@ -47,6 +54,8 @@ export default class ProductManager {
             console.log("Todos los campos son obligatorios o el código de producto ya existe");
         }
     }
+
+
     
     async getProducts() {
         try {

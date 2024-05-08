@@ -7,31 +7,55 @@
 </head>
 <body> 
     <section>
-<h1> Lista de Productos</h1>
-    <ul id="product-list">
-        {{#each products}}
-            <li>{{this.title}} - ${{this.price}}</li>
-        {{/each}}
-    </ul>
+        <h1>Lista de Productos</h1>
+        <ul id="product-list">
+            <!-- La lista de productos se llenará dinámicamente aquí -->
+            {{#each products}}
+                <li>{{this.title}} - ${{this.price}}</li>
+            {{/each}}
+        </ul>
     </section>
-<section>
-{{>form}}
-</section>
-     <script>
-        // Establece una conexión Socket.IO con el servidor
+    <section>
+        {{>form}}
+    </section>
+
+    <script src="https://cdn.socket.io/4.3.1/socket.io.min.js"></script>
+    <script>
         const socket = io();
 
-        // Maneja los mensajes recibidos del servidor
-        socket.on('productUpdate', function(products) {
-            // Actualiza la lista de productos en la vista
+        // Manejar evento para agregar un nuevo producto a la lista en tiempo real
+        socket.on('newProduct', function(product) {
             const productList = document.getElementById('product-list');
-            productList.innerHTML = '';
-            products.forEach(product => {
-                const listItem = document.createElement('li');
-                listItem.textContent = `${product.title} - $${product.price}`;
-                productList.appendChild(listItem);
-            });
+            const listItem = document.createElement('li');
+            listItem.textContent = `${product.title} - $${product.price}`;
+            productList.appendChild(listItem);
         });
+
+        // Función para enviar un nuevo producto al servidor
+        function addProduct() {
+            const titleInput = document.getElementById('title');
+            const priceInput = document.getElementById('price');
+
+            const title = titleInput.value;
+            const price = parseFloat(priceInput.value);
+
+            if (title && !isNaN(price) && price >= 0) {
+                const newProduct = {
+                    title: title,
+                    price: price
+                };
+
+                // Emitir evento 'addProduct' al servidor
+                socket.emit('addProduct', newProduct);
+
+                // Restablecer los campos del formulario
+                titleInput.value = '';
+                priceInput.value = '';
+            } else {
+                alert('Por favor, ingresa un título válido y un precio numérico positivo.');
+            }
+        }
     </script>
 </body>
 </html>
+

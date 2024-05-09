@@ -24,10 +24,10 @@
         const socket = io();
 
         // Manejar evento para agregar un nuevo producto a la lista en tiempo real
-        socket.on('newProduct', function(product) {
+        socket.on('productUpdate', function(newProduct) {
             const productList = document.getElementById('product-list');
             const listItem = document.createElement('li');
-            listItem.textContent = `${product.title} - $${product.price}`;
+            listItem.textContent = `${newProduct.title} - $${newProduct.price}`;
             productList.appendChild(listItem);
         });
 
@@ -58,4 +58,5 @@
     </script>
 </body>
 </html>
+
 

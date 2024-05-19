@@ -6,6 +6,7 @@ import config from './config.js';
 import handlebars from 'express-handlebars'
 import { Server } from 'socket.io';
 import {viewRouter} from  './routes/viewsRoutes.js'
+import mongoose from 'mongoose';
 
 // Inicialización de la aplicación Express
 const app = express();
@@ -27,7 +28,8 @@ app.set('view engine', 'handlebars');
 app.use('/static', express.static(`${config.DIRNAME}/public`));
 
 // Creación del servidor HTTP
-const httpServer = app.listen(config.PORT, () => {
+const httpServer = app.listen(config.PORT, async () => {
+    await mongoose.connect(config.MONGODB_URI);
     console.log(`Servidor activo en puerto http://localhost:${config.PORT}`);
 });
 

@@ -25,5 +25,15 @@
     "code": "PROD124",
     "stock": 10,
     "id": 4
+  },
+  {
+    "title": "hola",
+    "description": "sdfdsfdf",
+    "code": "dsfdsf",
+    "price": "44554",
+    "stock": "154454",
+    "category": "dsfsdfdsf",
+    "thumbnails": "img",
+    "id": 5
   }
 ]

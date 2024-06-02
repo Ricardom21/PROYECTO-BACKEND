@@ -1,28 +1,44 @@
+<!-- views/chat.handlebars -->
 <div>
     <h1>Chat</h1>
-    <h2> Dejanos tu Consulta</h2>
+    <h2>Dejanos tu Consulta</h2>
+
+    <!-- Mostrar mensajes históricos -->
+    {{#each messages}}
+        <div>
+            <strong>{{sender.username}}</strong>: {{message}} <small>{{timestamp}}</small>
+        </div>
+    {{/each}}
 
     <input type="text" id="chat" name="chat" placeholder="Ingresar mensaje" style="width: 300px;">
     <br />
     <button onClick="sendMessage()">Enviar</button>
 </div>
 
-
 <script src="/socket.io/socket.io.js"></script>
 <script>
-  
     const socketClient = io();
     const chat = document.getElementById('chat');
 
-   
     socketClient.on('newMessageConfirmation', data => {
         console.log(data);
     });
 
+    socketClient.on('message', data => {
+        console.log("Nuevo mensaje recibido:", data);
+        // Aquí puedes agregar lógica para mostrar el mensaje en la interfaz
+    });
+
     const sendMessage = () => {
         if (chat.value !== '') {
-      
-            socketClient.emit('newMessage', chat.value);
+            const messageData = {
+                sender: "ID_DEL_USUARIO_EMISOR",  // Reemplaza con el ID real del usuario
+                recipient: "ID_DEL_USUARIO_RECEPTOR",  // Opcional, reemplaza con el ID real del usuario receptor si existe
+                message: chat.value,
+                timestamp: new Date()
+            };
+
+            socketClient.emit('newMessage', messageData);
             console.log('Mensaje enviado');
         }
     }

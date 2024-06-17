@@ -55,5 +55,5 @@ socketServer.on('connection', client => {
             console.error("Error al manejar el nuevo mensaje:", error);
         }
     });
-});
+});  
 

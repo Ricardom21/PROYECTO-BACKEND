@@ -16,6 +16,8 @@ conectiondb();
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({extended: true}));
+app.use(cookieParser())
+
 
 // Configuración de las rutas
 app.use('/api/products', productRoutes);

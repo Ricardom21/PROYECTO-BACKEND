@@ -1,11 +1,14 @@
-import * as url from 'url';
+import * as url from "url";
 
 const config = {
-    PORT: process.env.PORT ?? 8080,
-    DIRNAME: url.fileURLToPath(new URL('.', import.meta.url)),
- 
-    get UPLOAD_DIR() { return `${this.DIRNAME}/public/img` },
-    MONGODB_URI:'mongodb://127.0.0.1:27017/mi_proyecto'
-}
+  PORT: 8080,
+  DIRNAME: url.fileURLToPath(new URL(".", import.meta.url)),
+  SERVER: "ecommerce",
+  get UPLOAD_DIR() {
+    return `${this.DIRNAME}/public/img`;
+  },
+  MONGO_URL: "mongodb+srv://rmnew-ricar_21:NXoiPQH1WhFENExM@ricardo21.psjk541.mongodb.net/Ecommerce",
+  SECRET: "113287484745753643170604",
+};
 
 export default config;

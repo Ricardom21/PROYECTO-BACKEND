@@ -1,45 +1,57 @@
-<!-- views/chat.handlebars -->
 <div>
-    <h1>Chat</h1>
-    <h2>Dejanos tu Consulta</h2>
-
-    <!-- Mostrar mensajes históricos -->
-    {{#each messages}}
-        <div>
-            <strong>{{sender.username}}</strong>: {{message}} <small>{{timestamp}}</small>
-        </div>
-    {{/each}}
-
-    <input type="text" id="chat" name="chat" placeholder="Ingresar mensaje" style="width: 300px;">
-    <br />
-    <button onClick="sendMessage()">Enviar</button>
+    <h1>Socket Chat</h1>
+    <input type="text" id="chat" placeholder="Ingrese un mensaje">
+    <button onclick="sendMessage()">Enviar</button>
 </div>
-
-<script src="/socket.io/socket.io.js"></script>
+<div id="chatList">
+</div>
+<h4>El chat se limpiará cada 24hs.</h4>
+<script src="/socket.io/socket.io.js"> // Esta ruta porque trabajamos con handlebars</script> 
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
-    const socketClient = io();
-    const chat = document.getElementById('chat');
-
-    socketClient.on('newMessageConfirmation', data => {
+    const socketClient = io(); // io("¿De qué servidor?")
+    const chat = document.getElementById("chat");
+    const chatList = document.getElementById("chatList");
+    let message;
+    let user;
+    socketClient.on("messageList", messages => {
+        for (let i = 0; i < messages.length; i++) {
+            let {user, message} = messages[i];
+            chatList.innerHTML += `<br /> ${user}: ${message}`;
+        }
+    })
+    socketClient.on("secondMessage", data => {
         console.log(data);
     });
-
-    socketClient.on('message', data => {
-        console.log("Nuevo mensaje recibido:", data);
-        // Aquí puedes agregar lógica para mostrar el mensaje en la interfaz
+    socketClient.on("messageArrived", data => {
+        const {user, message} = data;
+        chatList.innerHTML += `<br /> ${user}: ${message}`;
     });
 
     const sendMessage = () => {
-        if (chat.value !== '') {
-            const messageData = {
-                sender: "ID_DEL_USUARIO_EMISOR",  // Reemplaza con el ID real del usuario
-                recipient: "ID_DEL_USUARIO_RECEPTOR",  // Opcional, reemplaza con el ID real del usuario receptor si existe
-                message: chat.value,
-                timestamp: new Date()
-            };
-
-            socketClient.emit('newMessage', messageData);
-            console.log('Mensaje enviado');
+        message = chat.value;
+        if (message !=="") {
+            console.log("Mensaje enviado.");
+            socketClient.emit("newMessage", {user: user, message: message});
+            chat.value = "";
         }
     }
+    
+    const askForUser = () => {
+        Swal.fire({
+            title: "Hola!",
+            input: "email",
+            text: "Ingrese su correo.",
+            inputValidator: value => {return !value && "Se debe ingresar el nombre de usuario."},
+            icon: "success",
+            allowOutsideClick: false
+        }).then(res => {
+            console.log(res.value);
+            return user = res.value;
+        });
+    }
+
+    // Flujo principal
+    askForUser();
+
 </script>

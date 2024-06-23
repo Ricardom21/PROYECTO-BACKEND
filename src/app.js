@@ -1,61 +1,67 @@
-import express from 'express';
-import productRoutes from './routes/productRoutes.js'; 
-import cartRoutes from './routes/cartRoutes.js'; 
-import config from './config.js';
-import handlebars from 'express-handlebars'
-import { Server } from 'socket.io';
-import {viewRouter} from  './routes/viewsRoutes.js'
-import { conectiondb } from './db/mongodb.js';
-import mensajesRoutes from './routes/messajesRoutes.js'
-import messagesManager from './messajesManager.js'; // Importar el gestor de mensajes
+// Imports
+import express from "express";
+import mongoose from "mongoose";
+import handlebars from "express-handlebars";
+import cookieParser from "cookie-parser";
+import session from "express-session";
+import MongoStore from "connect-mongo";
+import passport from "passport";
+import config from "./config.js";
+import initSocket from "./sockets.js";
+import {
+  productRoutes,
+  cartRoutes,
+  viewRoutes,
+  userRoutes,
+  cookiesRoutes,
+  sessionsRoutes,
+} from "./routes/index.js";
 
-// Inicialización de la aplicación Express
+// Server init
 const app = express();
-conectiondb();
-
-// Middleware
-app.use(express.json());
-app.use(express.urlencoded({extended: true}));
-app.use(cookieParser())
-
-
-// Configuración de las rutas
-app.use('/api/products', productRoutes);
-app.use('/api/cart', cartRoutes);
-app.use('/', viewRouter);
-app.use('/api/messages', mensajesRoutes);
-
-// Configuración de Handlebars
-app.engine('handlebars', handlebars.engine());
-app.set('views', `${config.DIRNAME}/views`);
-app.set('view engine', 'handlebars');
-
-// Configuración de archivos estáticos
-app.use('/static', express.static(`${config.DIRNAME}/public`));
-
-// Creación del servidor HTTP
 const httpServer = app.listen(config.PORT, async () => {
-    console.log(`Servidor activo en puerto http://localhost:${config.PORT}`);
+  await mongoose.connect(config.MONGO_URL); // Lo manejamos con promesas, como hacíamos con Firebase en React.
+  console.log(
+    `Servidor activo en el puerto ${config.PORT}, conectado a DB '${config.SERVER}'.`
+  );
 });
+const socketServer = initSocket(httpServer);
 
-// Configuración del servidor de Socket.IO
-const socketServer = new Server(httpServer);
-app.set('socketServer', socketServer);
+// Settings & app middlewares:
 
-// Configuración de eventos de socket
-socketServer.on('connection', client => {
-    console.log(`Cliente conectado, id ${client.id}, desde ${client.handshake.address}`);
+// General
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser(config.SECRET));
+app.use(
+  session({
+    secret: config.SECRET,
+    resave: true,
+    saveUninitialized: true,
+    store: MongoStore.create({
+      mongoUrl: config.MONGO_URL,
+      mongoOptions: { useNewUrlParser: true, useUnifiedTopology: true },
+      ttl: 28800,
+    }),
+    // store: new fileStorage({path: "./sessions", ttl: 3600000, retries: 0})
+  })
+);
+app.use(passport.initialize());
+app.use(passport.session());
+app.set("socketServer", socketServer);
 
-    // Manejar eventos de nuevos mensajes
-    client.on('newMessage', async data => {
-        try {
-            const newMessage = await messagesManager.handleSocketMessage(data);
-            // Emitir el mensaje a todos los clientes conectados
-            socketServer.emit('message', newMessage);
-            client.emit('newMessageConfirmation', 'OK');
-        } catch (error) {
-            console.error("Error al manejar el nuevo mensaje:", error);
-        }
-    });
-});  
+// Views
+app.engine("handlebars", handlebars.engine());
+app.set("views", `${config.DIRNAME}/views`);
+app.set("view engine", "handlebars");
 
+// Routes
+app.use(viewRoutes);
+app.use("/api/products", productRoutes);
+app.use("/api/carts", cartRoutes);
+app.use("/api/users", userRoutes);
+app.use("/api/cookies", cookiesRoutes);
+app.use("/api/sessions", sessionsRoutes);
+
+// Static
+app.use("/static", express.static(`${config.DIRNAME}/public`));
